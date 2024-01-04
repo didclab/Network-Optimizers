@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 
 config.ini
+.optimizer.env
+.transfer_node_env
+boot.sh
+models/

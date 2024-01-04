@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from app.api.routers import optimizer_api
 
 app = FastAPI()

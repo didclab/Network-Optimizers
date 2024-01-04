@@ -1,0 +1,17 @@
+version: '3'
+services:
+  optimizer:
+    hostname: optimizer
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - /Users/jacobgoldverg/OneDataShareProject/Network-Optimizers/.optimizer.env
+
+  transfer_node:
+    image: onedatashare/transfer_service:latest
+    ports:
+      - "8092:8092"
+    env_file:
+      - .transfer_node_env

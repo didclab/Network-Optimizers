@@ -1,4 +1,4 @@
-from skopt.callbacks import EarlyStopper, CheckpointSaver
+from skopt.callbacks import EarlyStopper
 import app.db.db_helper as oh
 
 
@@ -16,8 +16,3 @@ class JobStopper(EarlyStopper):
             terminated, _ = oh.query_if_job_done(self.jobId)
         print("Job Stopper callback has value: " +str(terminated))
         return terminated
-
-class CheckPointer(CheckpointSaver):
-    def __init__(self, path):
-        super.__init__(path)
-
