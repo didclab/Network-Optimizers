@@ -1,3 +1,4 @@
+import os.path
 import time
 
 from fastapi import APIRouter, BackgroundTasks, Depends
@@ -9,7 +10,8 @@ optimizer_api = APIRouter()
 map_opt = {}
 thread_map = {}
 bayes_opt = BayesianOpt()
-bayes_opt.load()
+if os.path.exists(bayes_opt.dump_path):
+    bayes_opt.load()
 
 @optimizer_api.post("/optimizer/create", status_code=201)
 async def create_optimizer(create_request: CreateOptimizerRequest, background_tasks: BackgroundTasks) -> None:
