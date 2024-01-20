@@ -62,7 +62,7 @@ class BayesianOpt:
                 terminated, _ = oh.query_if_job_done(self.create_req.jobId)
 
             if set(self.data_cols).issubset(df.columns):
-                last_n_row = df.tail(n=4)
+                last_n_row = df.tail(n=2)
                 print("Concurrency Value waiting for: " + str(next_cc) + " got: " + str(
                     last_n_row['concurrency'].iloc[-1]))
                 print("Parallelism Value waiting for: " + str(next_p) + " got: " + str(
