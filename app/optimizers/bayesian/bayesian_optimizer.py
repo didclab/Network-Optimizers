@@ -10,7 +10,7 @@ from app.db.influx_db import InfluxDb
 from app.api.models import CreateOptimizerRequest
 import app.db.db_helper as oh
 from app.optimizers.bayesian.skopt_callbacks import JobStopper
-
+import pandas as pd
 import matplotlib
 
 matplotlib.use('Agg')
@@ -33,6 +33,8 @@ class BayesianOpt:
         self.dump_path = 'models/bayesian.pkl'
         self.past_actions = []
         self.json_file = "actions_throughput.json"
+        self.ema_alpha = 0.2  # Adjust the smoothing factor (alpha) as needed
+        self.ema_throughput = None  #
 
     def adjust_to_create_request(self, create_req: CreateOptimizerRequest):
         self.params = [Integer(1, int(create_req.maxConcurrency), name='concurrency'),
@@ -68,17 +70,23 @@ class BayesianOpt:
                 print("Parallelism Value waiting for: " + str(next_p) + " got: " + str(
                     last_n_row['parallelism'].iloc[-1]))
 
-                throughput = last_n_row['read_throughput'].iloc[-1]
+                # throughput = last_n_row['read_throughput'].iloc[-1]
+                throughputs = last_n_row['read_throughput'].tolist()
+                if self.ema_throughput is None:
+                    self.ema_throughput = throughputs
+                else:
+                    self.ema_throughput = throughputs.ewm(alpha=self.ema_alpha, adjust=False).mean()
+
                 if terminated:
                     self.past_actions.append((int(next_cc), int(next_p)))
-                    self.past_rewards.append(float(throughput))
-                    return -abs(throughput)
+                    self.past_rewards.append(self.ema_throughput)
+                    return -abs(self.ema_throughput)
                 if (last_n_row['concurrency'] == next_cc).all() and (last_n_row['parallelism'] == next_p).all():
                     print(last_n_row[['concurrency', 'parallelism']])
-                    print("Read throughput reward: " + str(throughput))
+                    print("Read throughput reward: " + str(self.ema_throughput))
                     self.past_actions.append((next_cc, next_p))
-                    self.past_rewards.append(throughput)
-                    return -abs(throughput)
+                    self.past_rewards.append(self.ema_throughput)
+                    return -abs(self.ema_throughput)
                 else:
                     print("Sleeping for 2 seconds for the next df")
                     re_push_params += 1
@@ -97,7 +105,9 @@ class BayesianOpt:
 
     def graph_model(self):
         combined_list = [{'jobUuid': self.create_req.jobUuid, 'jobId': self.create_req.jobId,
-                          'actions_rewards': {'concurrency': concurrency, 'parallelism': parallelism, 'throughput': rewards}}
+                          'actions_rewards': {'concurrency': self.convert_to_python_int(concurrency),
+                                              'parallelism': self.convert_to_python_int(parallelism),
+                                              'throughput': self.convert_to_python_int(rewards)}}
                          for (concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards)]
 
         with open(self.json_file,'w+', newline='') as file:
@@ -139,3 +149,8 @@ class BayesianOpt:
         self.bayes_model = load(self.dump_path)
         print(self.bayes_model)
         print("Bayes Model has loaded")
+
+    def convert_to_python_int(self, value):
+        if pd.api.types.is_integer_dtype(value):
+            return int(value)
+        return value
