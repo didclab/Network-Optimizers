@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 import time
 
@@ -31,6 +32,7 @@ class BayesianOpt:
         self.terminated = False
         self.dump_path = 'models/bayesian.pkl'
         self.past_actions = []
+        self.json_file = "actions_throughput.json"
 
     def adjust_to_create_request(self, create_req: CreateOptimizerRequest):
         self.params = [Integer(1, int(create_req.maxConcurrency), name='concurrency'),
@@ -93,11 +95,12 @@ class BayesianOpt:
         self.graph_model()
 
     def graph_model(self):
-        combined = list(zip(self.past_actions, self.past_rewards))
-        with open('actions_throughput.csv','w+', newline='') as file:
-            writer = csv.writer(file)
-            for(cc,p), rewards in combined:
-                writer.writerow([self.create_req.jobId, self.create_req.jobUuid,cc,p,rewards])
+        combined_list = [{'jobUuid': self.create_req.jobUuid, 'jobId': self.create_req.jobId,
+                          'actions_rewards': {'concurrency': concurrency, 'parallelism': parallelism, 'throughput': rewards}}
+                         for (concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards)]
+
+        with open(self.json_file,'w+', newline='') as file:
+            json.dump(combined_list, file, indent=2)
 
         plot_convergence(self.bayes_model)
         os.makedirs('graphs/', exist_ok=True)
