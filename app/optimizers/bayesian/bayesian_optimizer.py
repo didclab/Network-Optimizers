@@ -48,6 +48,7 @@ class BayesianOpt:
             oh.send_application_params_tuple(
                 transfer_node_name=self.create_req.nodeId,
                 cc=next_cc, p=next_p, pp=1, chunkSize=0)
+            print("Sent next action: cc:{}, p:{}", next_cc, next_p)
 
         re_push_params = 0
         while True:
