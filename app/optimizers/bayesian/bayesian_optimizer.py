@@ -100,7 +100,7 @@ class BayesianOpt:
                     time.sleep(10)
 
     def run_bayesian(self, episodes=10):
-        job_stopper = JobStopper(jobId=self.create_req.jobId, dbType=self.create_req.dbType)
+        job_stopper = JobStopper(create_req=self.create_req, influx_client=self.influx_client)
         self.bayes_model = gp_minimize(self.object_func, self.params, callback=[job_stopper])
         self.checkpoint()
         self.graph_model()
