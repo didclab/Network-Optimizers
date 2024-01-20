@@ -14,7 +14,7 @@ class JobStopper(EarlyStopper):
                                             bucket_name=self.create_req.userId,
                                             transfer_node_name=self.create_req.nodeId)
         last_row = df.tail(n=1)
-        if not last_row['isRunning'] and last_row['jobUuid'] == self.create_req.jobUuid:
+        if not last_row['isRunning'].iloc[-1]:
             terminated = True
         else:
             terminated = False
