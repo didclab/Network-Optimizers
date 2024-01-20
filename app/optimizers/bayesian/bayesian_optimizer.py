@@ -1,3 +1,4 @@
+import csv
 import os
 import time
 
@@ -92,6 +93,12 @@ class BayesianOpt:
         self.graph_model()
 
     def graph_model(self):
+        combined = list(zip(self.past_actions, self.past_rewards))
+        with open('actions_throughput.csv','w+', newline='') as file:
+            writer = csv.writer(file)
+            for(cc,p), rewards in combined:
+                writer.writerow([self.create_req.jobId, self.create_req.jobUuid,cc,p,rewards])
+
         plot_convergence(self.bayes_model)
         os.makedirs('graphs/', exist_ok=True)
         plt.savefig('graphs/transfer_test_plot.png')
@@ -109,6 +116,8 @@ class BayesianOpt:
         plt.legend()
         plt.savefig('graphs/bo_actions_cc_p_throughput.png')
         plt.close()
+        self.past_actions.clear()
+        self.past_rewards.clear()
 
     def delete_optimizer(self):
         self.terminated = True
