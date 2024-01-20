@@ -71,7 +71,7 @@ class BayesianOpt:
                     last_n_row['parallelism'].iloc[-1]))
 
                 # throughput = last_n_row['read_throughput'].iloc[-1]
-                throughputs = last_n_row['read_throughput'].tolist()
+                throughputs = last_n_row['read_throughput']
                 if self.ema_throughput is None:
                     self.ema_throughput = throughputs
                 else:
