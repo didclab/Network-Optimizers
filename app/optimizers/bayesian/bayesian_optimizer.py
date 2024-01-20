@@ -57,13 +57,19 @@ class BayesianOpt:
             df = self.influx_client.query_space(job_uuid=self.create_req.jobUuid, time_window="-30s",
                                                 bucket_name=self.create_req.userId,
                                                 transfer_node_name=self.create_req.nodeId)
-            if self.create_req.dbType == "hsql":
-                terminated, _ = oh.query_if_job_done_direct(self.create_req.jobId)
-            else:
-                terminated, _ = oh.query_if_job_done(self.create_req.jobId)
+            # if self.create_req.dbType == "hsql":
+            #     terminated, _ = oh.query_if_job_done_direct(self.create_req.jobId)
+            # else:
+            #     terminated, _ = oh.query_if_job_done(self.create_req.jobId)
 
             if set(self.data_cols).issubset(df.columns):
                 last_n_row = df.tail(n=4)
+                last_row = df.tail(n=1)
+                if not last_row['isRunning']:
+                    terminated = True
+                else:
+                    terminated = False
+
                 print("Concurrency Value waiting for: " + str(next_cc) + " got: " + str(
                     last_n_row['concurrency'].iloc[-1]))
                 print("Parallelism Value waiting for: " + str(next_p) + " got: " + str(
