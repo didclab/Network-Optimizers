@@ -65,7 +65,7 @@ class BayesianOpt:
             if set(self.data_cols).issubset(df.columns):
                 last_n_row = df.tail(n=4)
                 last_row = df.tail(n=1)
-                if not last_row['isRunning']:
+                if not last_row['isRunning'].iloc[-1]:
                     terminated = True
                 else:
                     terminated = False
