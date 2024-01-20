@@ -69,8 +69,8 @@ class BayesianOpt:
 
                 throughput = last_n_row['read_throughput'].iloc[-1]
                 if terminated:
-                    self.past_actions.append((next_cc, next_p))
-                    self.past_rewards.append(throughput)
+                    self.past_actions.append((int(next_cc), int(next_p)))
+                    self.past_rewards.append(float(throughput))
                     return -abs(throughput)
                 if (last_n_row['concurrency'] == next_cc).all() and (last_n_row['parallelism'] == next_p).all():
                     print(last_n_row[['concurrency', 'parallelism']])
