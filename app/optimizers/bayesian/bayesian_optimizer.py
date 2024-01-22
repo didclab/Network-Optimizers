@@ -3,6 +3,7 @@ import json
 import os
 import time
 import logging
+
 logging.basicConfig(level=logging.INFO)
 
 from skopt import gp_minimize, dump, load
@@ -108,26 +109,20 @@ class BayesianOpt:
         self.graph_model()
 
     def graph_model(self):
-        # combined_list = [{'jobUuid': self.create_req.jobUuid, 'jobId': self.create_req.jobId,
-        #                   'actions_rewards': {'concurrency': self.convert_to_python_int(concurrency),
-        #                                       'parallelism': self.convert_to_python_int(parallelism),
-        #                                       'throughput': self.convert_to_python_int(rewards)}}
-        #                  for (concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards)]
-        #
-        # with open(self.json_file,'a+', newline='') as file:
-        #     json.dump(combined_list, file, indent=2)
-        combined_list = []
-        for(concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards):
-            entry = {
-                'jobUuid': self.create_req.jobUuid,
-                'jobId': self.create_req.jobId,
-                'actions': [{'concurrency': self.convert_to_python_int(concurrency),
-                             'parallelism': self.convert_to_python_int(parallelism)}],
-                'throughput': [self.convert_to_python_int(rewards)]
-            }
-            combined_list.append(entry)
+        entry = {
+            'jobUuid': self.create_req.jobUuid,
+            'jobId': self.create_req.jobId,
+            'actions': [],
+            'throughput': []
+        }
+
+        for (concurrency, parallelism), reward in zip(self.past_actions, self.past_rewards):
+            entry['actions'].append({'concurrency': self.convert_to_python_int(concurrency),
+                                     'parallelism': self.convert_to_python_int(parallelism),
+                                     'throughput': self.convert_to_python_int(reward)})
+
         with open(self.json_file, 'a+', newline='') as file:
-            json.dump(combined_list, file)
+            json.dump(entry, file)
             file.write('\n')
 
         plot_convergence(self.bayes_model)
