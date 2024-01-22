@@ -112,7 +112,7 @@ class BayesianOpt:
                                               'throughput': self.convert_to_python_int(rewards)}}
                          for (concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards)]
 
-        with open(self.json_file,'w+', newline='') as file:
+        with open(self.json_file,'a+', newline='') as file:
             json.dump(combined_list, file, indent=2)
 
         plot_convergence(self.bayes_model)
