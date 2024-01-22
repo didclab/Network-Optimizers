@@ -108,14 +108,26 @@ class BayesianOpt:
         self.graph_model()
 
     def graph_model(self):
-        combined_list = [{'jobUuid': self.create_req.jobUuid, 'jobId': self.create_req.jobId,
-                          'actions_rewards': {'concurrency': self.convert_to_python_int(concurrency),
-                                              'parallelism': self.convert_to_python_int(parallelism),
-                                              'throughput': self.convert_to_python_int(rewards)}}
-                         for (concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards)]
-
-        with open(self.json_file,'a+', newline='') as file:
-            json.dump(combined_list, file, indent=2)
+        # combined_list = [{'jobUuid': self.create_req.jobUuid, 'jobId': self.create_req.jobId,
+        #                   'actions_rewards': {'concurrency': self.convert_to_python_int(concurrency),
+        #                                       'parallelism': self.convert_to_python_int(parallelism),
+        #                                       'throughput': self.convert_to_python_int(rewards)}}
+        #                  for (concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards)]
+        #
+        # with open(self.json_file,'a+', newline='') as file:
+        #     json.dump(combined_list, file, indent=2)
+        combined_list = []
+        for(concurrency, parallelism), rewards in zip(self.past_actions, self.past_rewards):
+            entry = {
+                'jobUuid': self.create_req.jobUuid,
+                'jobId': self.create_req.jobId,
+                'actions': [{'concurrency': self.convert_to_python_int(concurrency),
+                             'parallelism': self.convert_to_python_int(parallelism)}],
+                'throughput': [self.convert_to_python_int(rewards)]
+            }
+            combined_list.append(entry)
+        with open(self.json_file, 'a+', newline='') as file:
+            json.dump(combined_list, file)
 
         plot_convergence(self.bayes_model)
         os.makedirs('graphs/', exist_ok=True)
