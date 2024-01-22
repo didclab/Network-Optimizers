@@ -128,6 +128,7 @@ class BayesianOpt:
             combined_list.append(entry)
         with open(self.json_file, 'a+', newline='') as file:
             json.dump(combined_list, file)
+            file.write('\n')
 
         plot_convergence(self.bayes_model)
         os.makedirs('graphs/', exist_ok=True)
