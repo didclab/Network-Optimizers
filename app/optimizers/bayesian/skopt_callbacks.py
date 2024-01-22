@@ -1,7 +1,8 @@
 from skopt.callbacks import EarlyStopper
 from app.db.influx_db import InfluxDb
 from app.api.models import CreateOptimizerRequest
-
+import logging
+logging.basicConfig(level=logging.INFO)
 
 class JobStopper(EarlyStopper):
     def __init__(self, create_req: CreateOptimizerRequest, influx_client: InfluxDb):
@@ -18,5 +19,6 @@ class JobStopper(EarlyStopper):
             terminated = True
         else:
             terminated = False
+        logging.info(f"Job Stopper has terminated: {terminated}")
         print("Job Stopper callback has value: " + str(terminated))
         return terminated

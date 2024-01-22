@@ -2,6 +2,8 @@ import csv
 import json
 import os
 import time
+import logging
+logging.basicConfig(level=logging.INFO)
 
 from skopt import gp_minimize, dump, load
 from skopt.plots import plot_convergence
@@ -49,10 +51,11 @@ class BayesianOpt:
             oh.send_application_params_tuple(
                 transfer_node_name=self.create_req.nodeId,
                 cc=next_cc, p=next_p, pp=1, chunkSize=0)
-            print("Sent next action: cc:{}, p:{}", next_cc, next_p)
+            logging.info(f'Sent next action: cc:{next_cc}, p:{next_p}')
 
         re_push_params = 0
         while True:
+            logging.info(f'Blocking till action {params}')
             print("Blocking till action: ", params)
             df = self.influx_client.query_space(job_uuid=self.create_req.jobUuid, time_window="-30s",
                                                 bucket_name=self.create_req.userId,
@@ -69,11 +72,10 @@ class BayesianOpt:
                     terminated = True
                 else:
                     terminated = False
-
-                print("Concurrency Value waiting for: " + str(next_cc) + " got: " + str(
-                    last_n_row['concurrency'].iloc[-1]))
-                print("Parallelism Value waiting for: " + str(next_p) + " got: " + str(
-                    last_n_row['parallelism'].iloc[-1]))
+                obs_cc = last_n_row['concurrency'].iloc[-1]
+                obs_p = last_n_row['parallelism'].iloc[-1]
+                logging.info(f'Concurrency Value waiting for: {next_cc} got {obs_cc}')
+                logging.info(f'Parallelism Value waiting for: {next_p} got {obs_p}')
 
                 ema_throughput = self.ema_for_last_n(last_n_row, n=4)
                 if ema_throughput is None:
@@ -84,13 +86,13 @@ class BayesianOpt:
                     self.past_rewards.append(ema_throughput)
                     return -abs(ema_throughput)
                 if (last_n_row['concurrency'] == next_cc).all() and (last_n_row['parallelism'] == next_p).all():
-                    print(last_n_row[['concurrency', 'parallelism']])
-                    print("Read throughput reward: " + str(ema_throughput))
+                    logging.info(f'App Tuple cc:{next_cc} p:{next_p}')
+                    logging.info(f'Read Throughput Reward: {ema_throughput}')
                     self.past_actions.append((next_cc, next_p))
                     self.past_rewards.append(ema_throughput)
                     return -abs(ema_throughput)
                 else:
-                    print("Sleeping for 2 seconds for the next df")
+                    logging.info('Sleeping for 2 seconds for the next df')
                     re_push_params += 1
                     if re_push_params >= 5:
                         oh.send_application_params_tuple(
@@ -119,8 +121,8 @@ class BayesianOpt:
         os.makedirs('graphs/', exist_ok=True)
         plt.savefig('graphs/transfer_test_plot.png')
         plt.close()
-        print("Optimizer actions taken: ", self.past_actions)
-        print("Rewards corresponding to actions: ", self.past_rewards)
+        logging.info(f'Optimizer took actions: {self.past_actions}')
+        logging.info(f'Rewards Corresponding to actions: {self.past_rewards}')
         print("Optimization result: {}".format(self.bayes_model))
         labels = [f"({concurrency}, {parallelism})" for concurrency, parallelism in self.past_actions]
         plt.plot(labels, self.past_rewards, marker='o', linestyle='-', color='b', label='Throughput')
@@ -149,8 +151,7 @@ class BayesianOpt:
 
     def load(self):
         self.bayes_model = load(self.dump_path)
-        print(self.bayes_model)
-        print("Bayes Model has loaded")
+        logging.info('Bayes Model loaded')
 
     def convert_to_python_int(self, value):
         if pd.api.types.is_integer_dtype(value):
