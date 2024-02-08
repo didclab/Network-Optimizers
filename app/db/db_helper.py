@@ -147,13 +147,9 @@ def query_if_job_running(jobId, hsql_enabled=False):
         return False, meta_data
 
 
-def submit_transfer_request(batch_info_json, optimizer):
+def submit_transfer_request(batch_info_json):
     url = "http://{}:8061/receiveRequest".format(sched_ip)
-    tranferRequest = transform_batch_info_json_to_transfer_request(
-        batch_info_json)
-    if len(optimizer) > 0:
-        tranferRequest.options.optimizer = optimizer
-    return requests.post(url=url, data=transform_batch_info_json_to_transfer_request(batch_info_json).toJSON(),
+    return requests.post(url=url, data=batch_info_json,
                          headers=headers)
 
 

@@ -15,7 +15,3 @@ class CreateOptimizerRequest(BaseModel):
     dbType: str
     jobUuid: str
     userId: str
-
-
-class DeleteOptimizerRequest(BaseModel):
-    nodeId: str

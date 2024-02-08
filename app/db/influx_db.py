@@ -60,7 +60,7 @@ class InfluxDb:
         |> range(start: {})
         |> filter(fn: (r) => r["_measurement"] == "transfer_data")
         |> filter(fn: (r) => r["APP_NAME"] == "{}")
-        |> filter(fn: (r) => r["jobId"] >= 0)
+        |> filter(fn: (r) => r["jobId"] >= "0")
         |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
         '''.format(bucket_name, time_window, transfer_node_name)
         done = False
@@ -78,6 +78,7 @@ class InfluxDb:
                 break
         df.drop_duplicates(inplace=True)
         df.dropna(inplace=True)
+        df.to_csv('test_csv')
         return df
 
     def close_client(self):
