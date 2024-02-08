@@ -46,7 +46,7 @@ async def delete_optimizer(delete_request: DeleteOptimizerRequest) -> None:
 
 @optimizer_api.post("/optimizer/train", status_code=200)
 async def train_optimizer():
-
+    pass
 
 @optimizer_api.get("/env/baselines/compatible", status_code=201)
 async def check_env():
