@@ -1,7 +1,7 @@
 import os
 
 from app.storage.ConfigStore import ConfigS3Storage, ConfigFileSystemStorage, ConfigStore
-from app.storage.OptimizerStore import OptimizerStore, FileSystemOptimizerStore, S3OptimizerStore
+from app.storage.OptimizerStore import OptimizerStore, FileSystemOptimizerStore, S3OptimizerStorage
 
 
 class StorageFactory:
@@ -23,7 +23,7 @@ class StorageFactory:
         if StorageFactory._optimizer_storage is None:
             storage_type = os.getenv("STORAGE_TYPE", "filesystem")
             if storage_type == "s3":
-                StorageFactory._optimizer_storage = S3OptimizerStore()
+                StorageFactory._optimizer_storage = S3OptimizerStorage()
             else:
                 StorageFactory._optimizer_storage = FileSystemOptimizerStore()
         return StorageFactory._optimizer_storage
