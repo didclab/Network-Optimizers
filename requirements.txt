@@ -4,8 +4,10 @@ pytest
 requests
 influxdb-client[ciso]
 matplotlib
-numpy~=1.22.4
+numpy
 scipy
 scikit-optimize
 pandas
 stable-baselines3[extra]
+boto3
+httpx
