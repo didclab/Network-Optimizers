@@ -1,4 +1,3 @@
-import csv
 import json
 import os
 import time
@@ -10,7 +9,7 @@ from skopt import gp_minimize, dump, load
 from skopt.plots import plot_convergence
 from skopt.space import Integer
 from app.db.influx_db import InfluxDb
-from app.api.models import CreateOptimizerRequest
+from app.api.models import TuneRequest
 import app.db.db_helper as oh
 from app.optimizers.bayesian.skopt_callbacks import JobStopper
 import pandas as pd
@@ -23,7 +22,7 @@ import matplotlib.pyplot as plt
 class BayesianOpt:
     def __init__(self, time_window="-2m"):
         self.job_id = None
-        self.create_req = None
+        self.tune_req = None
         self.params = None
         self.bayes_model = None
         self.influx_client = InfluxDb()
@@ -38,19 +37,19 @@ class BayesianOpt:
         self.json_file = "actions_throughput.json"
         self.ema_alpha = 0.2
 
-    def adjust_to_create_request(self, create_req: CreateOptimizerRequest):
-        self.params = [Integer(1, int(create_req.maxConcurrency), name='concurrency'),
-                       Integer(1, int(create_req.maxParallelism), name='parallelism')]
-        self.create_req = create_req
-        self.job_id = create_req.jobId
+    def adjust_to_create_request(self, tune_req: TuneRequest):
+        self.params = [Integer(1, int(tune_req.maxConcurrency), name='concurrency'),
+                       Integer(1, int(tune_req.maxParallelism), name='parallelism')]
+        self.tune_req = tune_req
+        self.job_id = tune_req.job_id
 
     def object_func(self, params):
         next_cc = params[0]
         next_p = params[1]
         # Apply bayesian params
-        if (1 < next_cc < self.create_req.maxConcurrency) and (1 < next_p < self.create_req.maxParallelism):
+        if (1 < next_cc < self.tune_req.maxConcurrency) and (1 < next_p < self.tune_req.maxParallelism):
             oh.send_application_params_tuple(
-                transfer_node_name=self.create_req.nodeId,
+                transfer_node_name=self.tune_req.nodeId,
                 cc=next_cc, p=next_p, pp=1, chunkSize=0)
             logging.info(f'Sent next action: cc:{next_cc}, p:{next_p}')
 
@@ -58,14 +57,9 @@ class BayesianOpt:
         while True:
             logging.info(f'Blocking till action {params}')
             print("Blocking till action: ", params)
-            df = self.influx_client.query_space(job_uuid=self.create_req.jobUuid, time_window="-30s",
-                                                bucket_name=self.create_req.userId,
-                                                transfer_node_name=self.create_req.nodeId)
-            # if self.create_req.dbType == "hsql":
-            #     terminated, _ = oh.query_if_job_done_direct(self.create_req.jobId)
-            # else:
-            #     terminated, _ = oh.query_if_job_done(self.create_req.jobId)
-
+            df = self.influx_client.query_space(job_uuid=self.tune_req.jobUuid, time_window="-30s",
+                                                bucket_name=self.tune_req.userId,
+                                                transfer_node_name=self.tune_req.nodeId)
             if set(self.data_cols).issubset(df.columns):
                 last_n_row = df.tail(n=4)
                 last_row = df.tail(n=1)
@@ -97,21 +91,21 @@ class BayesianOpt:
                     re_push_params += 1
                     if re_push_params >= 5:
                         oh.send_application_params_tuple(
-                            transfer_node_name=self.create_req.nodeId,
+                            transfer_node_name=self.tune_req.nodeId,
                             cc=next_cc, p=next_p, pp=1, chunkSize=0)
                         re_push_params = 0
                     time.sleep(10)
 
     def run_bayesian(self, episodes=10):
-        job_stopper = JobStopper(create_req=self.create_req, influx_client=self.influx_client)
+        job_stopper = JobStopper(create_req=self.tune_req, influx_client=self.influx_client)
         self.bayes_model = gp_minimize(self.object_func, self.params, callback=[job_stopper])
         self.checkpoint()
         self.graph_model()
 
     def graph_model(self):
         entry = {
-            'jobUuid': self.create_req.jobUuid,
-            'jobId': self.create_req.jobId,
+            'jobUuid': self.tune_req.jobUuid,
+            'jobId': self.tune_req.jobId,
             'actions': [],
             'throughput': []
         }

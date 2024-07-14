@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.models import GlobalConfig, TrainConfig, TuneConfig, EvaluateConfig, DDPGTrainingConfig, A2CTrainingConfig, \
+from app.api.models import GlobalConfig, TrainConfig, TuneConfig, EvaluateConfig, DDPGTrainingConfig, \
     PPOTrainingConfig, ModelType
 from typing import Union
 from app.storage.StorageFactory import StorageFactory
@@ -14,8 +14,7 @@ def get_config(config_name: str, owner_id: str, model_type: ModelType):
 
 
 @config_router.post("/")
-def create_config(config: Union[
-    GlobalConfig, TrainConfig, TuneConfig, EvaluateConfig, DDPGTrainingConfig, A2CTrainingConfig, PPOTrainingConfig],
+def create_config(config: GlobalConfig,
                   owner_id: str):
     return config_store.create_config(global_config=config, owner_id=owner_id)
 

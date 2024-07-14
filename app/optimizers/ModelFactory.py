@@ -11,6 +11,3 @@ class ModelFactory:
             return DDPG.load(file_path)
         elif model_type == "PPO":
             return PPO.load(file_path)
-        elif model_type == "A2C":
-            return A2C.load(file_path)
-

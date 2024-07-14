@@ -1,21 +1,22 @@
-from app.api.models import EvaluateRequest
+from app.api.models import TransferJobRequest
 from app.environemnts.ods_real_transfer_env import InfluxEnv
 from app.storage.OptimizerStore import OptimizerStore
 from app.optimizers.ModelFactory import ModelFactory
+from app.api.models import EvaluateConfig
 
 
 class EvaluateRunner:
-    def __init__(self, evaluate_request: EvaluateRequest, model_store: OptimizerStore):
-        self.file_transfer_request = evaluate_request.fileTransferRequest
-        self.eval_config = evaluate_request.config
+    def __init__(self, transfer_request: TransferJobRequest, model_store: OptimizerStore, config: EvaluateConfig):
+        self.eval_config = config
+        self.file_transfer_request = transfer_request
         self.model_storage = model_store
         self.env = InfluxEnv(transfer_request=self.file_transfer_request, action_space_discrete=False,
                              obs_cols=self.eval_config.obs_cols,
                              render_type=None, reward_window=self.eval_config.reward_window,
                              query_time_window=self.eval_config.query_time_window)
         self.model_path = self.model_storage.load_model(owner_id=self.file_transfer_request.ownerId,
-                                                        config=self.eval_config)
-        self.model = ModelFactory.load_model(self.eval_config.modelType, self.model_path)
+                                                        modelType=self.eval_config.modelType,
+                                                        modelName=self.eval_config.modelName)
 
     def evaluate(self):
         rewards = []

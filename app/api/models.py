@@ -4,20 +4,6 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-class CreateOptimizerRequest(BaseModel):
-    nodeId: str
-    maxConcurrency: int
-    maxParallelism: int
-    maxPipelining: int
-    maxChunkSize: int
-    optimizerType: str
-    fileCount: int
-    jobId: int
-    dbType: str
-    jobUuid: str
-    userId: str
-
-
 class EntityInfo(BaseModel):
     id: str
     path: str
@@ -29,16 +15,16 @@ class FileSource(BaseModel):
     credId: str
     type: str
     fileSourcePath: str
-    resourceList: List[EntityInfo] = []
+    fileList: List[EntityInfo] = []
 
 
 class FileDestination(BaseModel):
     credId: str
     type: str
-    fileSourcePath: str
+    fileDestinationPath: str
 
 
-class UserTransferOptions(BaseModel):
+class TransferOptions(BaseModel):
     compress: bool
     encrypt: bool
     optimizer: str
@@ -48,30 +34,44 @@ class UserTransferOptions(BaseModel):
     concurrencyThreadCount: int
     parallelThreadCount: int
     pipeSize: int
-    chunkSize: int
     maxConcurrency: Optional[int] = 32
     maxParallelism: Optional[int] = 32
-
-
-class RequestFromODS(BaseModel):
-    ownerId: str
-    transferNodeName: str
-    source: FileSource
-    destination: FileDestination
-    options: UserTransferOptions
-    jobUuid: str
 
 
 class ModelType(str, Enum):
     ddpg = "DDPG"
     ppo = "PPO"
-    dqn = "DQN"
+    bo = "BO"
+    sgd = "SGD"
+
+
+class OptimizerFunctionType(Enum):
+    TRAIN = "TRAIN"
+    EVALUATE = "EVALUATE"
+    TUNE = "TUNE"
+
+
+class OptimizerOptions(BaseModel):
+    modelType: ModelType
+    modelName: str
+    optimizerRequestType: OptimizerFunctionType
+    config_name: str
+
+
+class TransferJobRequest(BaseModel):
+    ownerId: str
+    transferNodeName: str
+    source: FileSource
+    destination: FileDestination
+    options: TransferOptions
+    jobUuid: str
+    optimizerOptions: OptimizerOptions
 
 
 class ConfigType(str, Enum):
-    train = "train"
-    eval = "eval"
-    tune = "tune"
+    train = "TRAIN"
+    eval = "EVALUATE"
+    tune = "TUNE"
 
 
 class GlobalConfig(BaseModel):
@@ -123,32 +123,13 @@ class PPOTrainingConfig(TrainConfig):
     learningRate: float = 0.0003
 
 
-class A2CTrainingConfig(TrainConfig):
-    n_steps: int = 5
-    gamma: float = 0.99
-    gae_lambda: int = 1.0
-    ent_coef: float = 0.0
-    vf_coef: float = 0.5
-    max_grad_norm: float = 0.5
-    rms_prop_eps: float = 1e-05
-    use_rms_prop: bool = True
-    use_sde: bool = False
-    sde_sample_freq: int = -1
-    normalize_advantage: bool = False
-    stats_window_size: int = 100
-    learningRate: float = 0.0007
+class BOTrainingConfig(TrainConfig):
+    pass
 
 
-class TrainRequest(BaseModel):
-    fileTransferRequest: RequestFromODS
-    config: TrainConfig
+class SGDTrainingConfig(TrainConfig):
+    pass
 
 
-class EvaluateRequest(BaseModel):
-    config: EvaluateConfig
-    fileTransferRequest: RequestFromODS
-
-
-class TuneConfig(GlobalConfig):
-    modelName: str
-    modelType: str
+class TuneConfig:
+    pass

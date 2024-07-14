@@ -4,8 +4,8 @@ import os
 
 import boto3
 
-from app.api.models import GlobalConfig, ModelType, ConfigType, DDPGTrainingConfig, PPOTrainingConfig, EvaluateConfig, \
-    TuneConfig
+from app.api.models import GlobalConfig, ModelType, SGDTrainingConfig, BOTrainingConfig, DDPGTrainingConfig, \
+    PPOTrainingConfig
 
 
 class ConfigStore(ABC):
@@ -58,7 +58,7 @@ class ConfigFileSystemStorage(ConfigStore):
         if os.path.exists(path):
             with open(path, "r") as file:
                 config_data = json.load(file)
-                return ConfigFactory.create_config(model_type=model_type, config_type=config_data['configType'],
+                return ConfigFactory.create_config(model_type=model_type,
                                                    config_data=config_data)
         else:
             return None
@@ -100,22 +100,22 @@ class ConfigS3Storage(ConfigStore):
         response = obj.get()
         config_json = response['Body'].read().decode('utf-8')
         config_dict = json.loads(config_json)
-        return ConfigFactory.create_config(model_type=config_dict['modelType'], config_type=config_dict['configType'],
+        return ConfigFactory.create_config(model_type=config_dict['modelType'],
                                            config_data=config_dict)
 
 
 class ConfigFactory:
 
     @staticmethod
-    def create_config(model_type: ModelType, config_type: ConfigType, config_data: dict) -> GlobalConfig:
-        if model_type == ModelType.ddpg and config_type == ConfigType.train:
+    def create_config(model_type: ModelType, config_data: dict) -> GlobalConfig:
+        if model_type == ModelType.ddpg:
             return DDPGTrainingConfig(**config_data)
-        elif model_type == ModelType.ppo and config_type == ConfigType.train:
+        elif model_type == ModelType.ppo:
             return PPOTrainingConfig(**config_data)
-        elif config_type == ConfigType.eval:
-            return EvaluateConfig(**config_data)
-        elif config_type == ConfigType.tune:
-            return TuneConfig(**config_data)
+        elif model_type == ModelType.bo:
+            return BOTrainingConfig(**config_data)
+        elif model_type == ModelType.sgd:
+            return SGDTrainingConfig(**config_data)
         # Add more conditions for other configurations as needed
         else:
             raise ValueError("Invalid modelType or configType")

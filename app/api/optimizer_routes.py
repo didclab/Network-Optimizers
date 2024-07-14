@@ -1,7 +1,8 @@
 from fastapi import APIRouter, BackgroundTasks, UploadFile, File
-from app.api.models import CreateOptimizerRequest, TrainRequest, EvaluateRequest, ModelType
-from app.optimizers.runner_factory import RunnerFactory
+from app.api.models import ModelType, TransferJobRequest, OptimizerFunctionType, EvaluateConfig, TuneConfig
+from app.optimizers.RunnerFactory import RunnerFactory
 from app.optimizers.EvaluateRunner import EvaluateRunner
+from app.optimizers.TuneRunner import TuneRunner
 from typing import Dict, Type, TypeVar
 from app.storage.StorageFactory import StorageFactory
 
@@ -11,31 +12,31 @@ optimizer_api = APIRouter()
 RunnerMap: Dict[str, Type[T]] = {}
 
 storage = StorageFactory.get_optimizer_storage()
+config_store = StorageFactory.get_config_storage()
 
 
-@optimizer_api.post("/train", status_code=200)
-async def train_optimizer(trainRequest: TrainRequest, background_tasks: BackgroundTasks) -> None:
-    runner = RunnerFactory.create_runner(train_request=trainRequest, storage=storage)
-    runner.load_model()
-    background_tasks.add_task(runner.train())
+@optimizer_api.post("/optimize", status_code=200)
+async def optimize_transfer(transferRequest: TransferJobRequest, background_tasks: BackgroundTasks) -> None:
+    optimizerOptions = transferRequest.optimizerOptions
+    config = config_store.get_config(model_type=optimizerOptions.modelType,
+                                     config_name=optimizerOptions.config_name,
+                                     owner_id=transferRequest.ownerId)
 
+    if optimizerOptions.optimizerRequestType == OptimizerFunctionType.TRAIN:
+        runner = RunnerFactory.create_runner(transfer_request=transferRequest, storage=storage, config=config)
+        runner.load_model()
+        background_tasks.add_task(runner.train())
+    elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.EVALUATE:
+        eval_runner = EvaluateRunner(transfer_request=transferRequest, model_store=storage,
+                                     config=EvaluateConfig(**config.dict()))
+        eval_runner.load_model()
+        background_tasks.add_task(eval_runner.evaluate())
 
-@optimizer_api.post("/evaluate", status_code=200)
-async def evaluate_optimizer(evaluateRequest: EvaluateRequest, background_tasks: BackgroundTasks) -> None:
-    evalRunner = EvaluateRunner(evaluate_request=evaluateRequest, model_persistence=storage)
-    evalRunner.load_model()
-    background_tasks.add_task(evalRunner.evaluate)
-
-
-@optimizer_api.post("/tune")
-async def tune_transfer(create_request: CreateOptimizerRequest):
-    """
-    Scheduler hits this to create the requested optimizer. Then the optimizer blocks till it sees the transfer has started with that jobUuid
-    Once the optimizer see it, we optimize till the job ends. No need for env, this assumes the model is fully trained and simply loads an optimizer stored
-    :return:
-    """
-
-    pass
+    elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.TRAIN:
+        tune_runner = TuneRunner(transfer_request=transferRequest, model_store=storage,
+                                 tune_config=TuneConfig(**config.dict()))
+        tune_runner.load_model()
+        background_tasks.add_task(tune_runner.tune_transfer())
 
 
 @optimizer_api.get("/download", status_code=200)

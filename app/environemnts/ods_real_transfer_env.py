@@ -4,7 +4,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 import logging
-from app.api.models import RequestFromODS
+from app.api.models import TransferJobRequest
 from app.db.influx_db import InfluxDb
 import app.db.db_helper as oh
 import time
@@ -15,10 +15,9 @@ gym.logger.set_level(gym.logger.INFO)
 
 class InfluxEnv(gym.Env):
 
-    def __init__(self, transfer_request: RequestFromODS, action_space_discrete=False, obs_cols=[],
+    def __init__(self, transfer_request: TransferJobRequest, action_space_discrete=False, obs_cols=[],
                  render_type=None, reward_window=4, reward_func=None, query_time_window='-2m'):
         super(InfluxEnv, self).__init__()
-        self.replay_buffer = None
         self.transfer_request = transfer_request
         self.reward_window = reward_window
         self.influx_bucket_name = transfer_request.transferNodeName.split("-")[0]

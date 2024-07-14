@@ -1,7 +1,7 @@
 from typing import Optional
 
 from app.optimizers.TrainRunner import TrainRunner
-from app.api.models import RequestFromODS
+from app.api.models import TransferJobRequest
 from app.api.models import DDPGTrainingConfig
 from app.environemnts.ods_real_transfer_env import InfluxEnv
 from stable_baselines3.ddpg import DDPG
@@ -10,9 +10,9 @@ from app.storage.OptimizerStore import OptimizerStore
 import numpy as np
 
 
-class DdpgRunner(TrainRunner):
+class DdpgTrainRunner(TrainRunner):
 
-    def __init__(self, transfer_request: RequestFromODS, ddpg_config: DDPGTrainingConfig,
+    def __init__(self, transfer_request: TransferJobRequest, ddpg_config: DDPGTrainingConfig,
                  model_storage: OptimizerStore):
         self.file_transfer = transfer_request
         self.ddpg_config = ddpg_config
@@ -38,9 +38,13 @@ class DdpgRunner(TrainRunner):
         self.save_model()
 
     def save_model(self, path: Optional[str] = None):
-        return self.model_storage.save_model(owner_id=self.file_transfer.ownerId, config=self.ddpg_config,
+        return self.model_storage.save_model(owner_id=self.file_transfer.ownerId, modelName=self.ddpg_config.modelName,
+                                             modelType=self.ddpg_config.modelType,
                                              base_algo=self.model)
 
     def load_model(self, path: Optional[str] = None):
-        model_path = self.model_storage.load_model(owner_id=self.file_transfer.ownerId, config=self.ddpg_config)
+        model_path = self.model_storage.load_model(owner_id=self.file_transfer.ownerId,
+                                                   modelType=self.ddpg_config.modelType,
+                                                   modelName=self.ddpg_config.modelName)
         self.model = DDPG.load(path=model_path, env=self.env)
+
