@@ -3,7 +3,7 @@ from app.api.models import ModelType, TransferJobRequest, OptimizerFunctionType,
 from app.optimizers.RunnerFactory import RunnerFactory
 from app.optimizers.EvaluateRunner import EvaluateRunner
 from app.optimizers.TuneRunner import TuneRunner
-from typing import Dict, Type, TypeVar
+from typing import Dict, Type, TypeVar, List
 from app.storage.StorageFactory import StorageFactory
 
 T = TypeVar('T', bound='BaseRunner')
@@ -13,30 +13,33 @@ RunnerMap: Dict[str, Type[T]] = {}
 
 storage = StorageFactory.get_optimizer_storage()
 config_store = StorageFactory.get_config_storage()
+transfer_jobs_store = StorageFactory.get_transfer_job_storage()
 
 
 @optimizer_api.post("/optimize", status_code=200)
-async def optimize_transfer(transferRequest: TransferJobRequest, background_tasks: BackgroundTasks) -> None:
-    optimizerOptions = transferRequest.optimizerOptions
-    config = config_store.get_config(model_type=optimizerOptions.modelType,
-                                     config_name=optimizerOptions.config_name,
-                                     owner_id=transferRequest.ownerId)
+async def optimize_transfer(transfer_job_uuids: List[str], background_tasks: BackgroundTasks) -> None:
+    for job_uuid in transfer_job_uuids:
+        transferRequest = transfer_jobs_store.load_transfer_job(job_uuid)
+        optimizerOptions = transferRequest.optimizerOptions
+        config = config_store.get_config(model_type=optimizerOptions.modelType,
+                                        config_name=optimizerOptions.config_name,
+                                        owner_id=transferRequest.ownerId)
 
-    if optimizerOptions.optimizerRequestType == OptimizerFunctionType.TRAIN:
-        runner = RunnerFactory.create_runner(transfer_request=transferRequest, storage=storage, config=config)
-        runner.load_model()
-        background_tasks.add_task(runner.train())
-    elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.EVALUATE:
-        eval_runner = EvaluateRunner(transfer_request=transferRequest, model_store=storage,
-                                     config=EvaluateConfig(**config.dict()))
-        eval_runner.load_model()
-        background_tasks.add_task(eval_runner.evaluate())
+        if optimizerOptions.optimizerRequestType == OptimizerFunctionType.TRAIN:
+            runner = RunnerFactory.create_runner(transfer_request=transferRequest, storage=storage, config=config)
+            runner.load_model()
+            background_tasks.add_task(runner.train())
+        elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.EVALUATE:
+            eval_runner = EvaluateRunner(transfer_request=transferRequest, model_store=storage,
+                                        config=EvaluateConfig(**config.dict()))
+            eval_runner.load_model()
+            background_tasks.add_task(eval_runner.evaluate())
 
-    elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.TRAIN:
-        tune_runner = TuneRunner(transfer_request=transferRequest, model_store=storage,
-                                 tune_config=TuneConfig(**config.dict()))
-        tune_runner.load_model()
-        background_tasks.add_task(tune_runner.tune_transfer())
+        elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.TRAIN:
+            tune_runner = TuneRunner(transfer_request=transferRequest, model_store=storage,
+                                    tune_config=TuneConfig(**config.dict()))
+            tune_runner.load_model()
+            background_tasks.add_task(tune_runner.tune_transfer())
 
 
 @optimizer_api.get("/download", status_code=200)
