@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel
 
@@ -57,7 +57,12 @@ class OptimizerOptions(BaseModel):
     optimizerRequestType: OptimizerFunctionType
     config_name: str
 
-
+class JobMetrics(BaseModel):
+    epoch_data: List[Dict[str, Any]] = []
+    total_reward: Optional[float] = None
+    action_count: Optional[int] = None
+    other_metrics: Dict[str, Any] = {}
+ 
 class TransferJobRequest(BaseModel):
     ownerId: str
     transferNodeName: str

@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from app.api.models import TransferJobRequest
-from app.storage.TransferJobStore import TransferJobStore
+from app.storage.StorageFactory import StorageFactory
 
 transfer_job_router = APIRouter()
-transfer_job_store = TransferJobStore()
+transfer_job_store = StorageFactory.get_transfer_job_storage()
 
 @transfer_job_router.post("/")
 def add_transfer_job(transfer_job: TransferJobRequest):

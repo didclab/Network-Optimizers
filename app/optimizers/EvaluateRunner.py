@@ -1,15 +1,17 @@
 from app.api.models import TransferJobRequest
 from app.environemnts.ods_real_transfer_env import InfluxEnv
 from app.storage.OptimizerStore import OptimizerStore
+from app.storage.JobMetricsStore import JobMetricsStore
 from app.optimizers.ModelFactory import ModelFactory
-from app.api.models import EvaluateConfig
+from app.api.models import EvaluateConfig, JobMetrics
 
 
 class EvaluateRunner:
-    def __init__(self, transfer_request: TransferJobRequest, model_store: OptimizerStore, config: EvaluateConfig):
+    def __init__(self, transfer_request: TransferJobRequest, model_store: OptimizerStore, metrics_store: JobMetricsStore, config: EvaluateConfig):
         self.eval_config = config
         self.file_transfer_request = transfer_request
         self.model_storage = model_store
+        self.metrics_store = metrics_store
         self.env = InfluxEnv(transfer_request=self.file_transfer_request, action_space_discrete=False,
                              obs_cols=self.eval_config.obs_cols,
                              render_type=None, reward_window=self.eval_config.reward_window,
@@ -21,12 +23,24 @@ class EvaluateRunner:
     def evaluate(self):
         rewards = []
         actions = []
+        epoch_data = []
         for i in range(0, self.eval_config.episodeCount):
             obs = self.env.reset()
             action, _ = self.model.predict(observation=obs)
             next_obs, reward, terminated, truncated, info = self.env.step(action)
             rewards.append(reward)
             actions.append(action)
+            epoch_data.append({"reward": reward, "action": action})
+        
+        metrics = JobMetrics(
+            epoch_data=epoch_data,
+            total_reward=sum(data["reward"] for data in epoch_data),
+            action_count=len(epoch_data)
+        )
+
+        self.metrics_store.save_job_metrics(owner_id=self.file_transfer_request.ownerId,
+                job_uuid=self.file_transfer_request.jobUuid,
+                metrics=metrics)
 
         return actions, rewards
 

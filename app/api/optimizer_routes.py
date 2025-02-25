@@ -14,6 +14,7 @@ RunnerMap: Dict[str, Type[T]] = {}
 storage = StorageFactory.get_optimizer_storage()
 config_store = StorageFactory.get_config_storage()
 transfer_jobs_store = StorageFactory.get_transfer_job_storage()
+job_metrics_store = StorageFactory.get_metrics_storage()
 
 
 @optimizer_api.post("/optimize", status_code=200)
@@ -30,7 +31,7 @@ async def optimize_transfer(transfer_job_uuids: List[str], background_tasks: Bac
             runner.load_model()
             background_tasks.add_task(runner.train())
         elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.EVALUATE:
-            eval_runner = EvaluateRunner(transfer_request=transferRequest, model_store=storage,
+            eval_runner = EvaluateRunner(transfer_request=transferRequest, model_store=storage, metrics_store=job_metrics_store,
                                         config=EvaluateConfig(**config.dict()))
             eval_runner.load_model()
             background_tasks.add_task(eval_runner.evaluate())

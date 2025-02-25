@@ -3,10 +3,13 @@ import os
 from app.storage.ConfigStore import ConfigS3Storage, ConfigFileSystemStorage, ConfigStore
 from app.storage.OptimizerStore import OptimizerStore, FileSystemOptimizerStore, S3OptimizerStorage
 from app.storage.TransferJobStore import TransferJobStore, TransferJobFileSystemStorage, TransferJobS3Storage
+from app.storage.JobMetricsStore import JobMetricsStore, JobMetricsFileSystemStorage, JobMetricsS3Storage
 
 class StorageFactory:
     _config_storage = None
     _optimizer_storage = None
+    _transfer_job_storage = None
+    _job_metrics_storage = None
 
     @staticmethod
     def get_config_storage() -> ConfigStore:
@@ -37,3 +40,13 @@ class StorageFactory:
             else:
                 StorageFactory._transfer_job_storage = TransferJobFileSystemStorage()
         return StorageFactory._transfer_job_storage
+    
+    @staticmethod
+    def get_metrics_storage() -> JobMetricsStore:
+        if StorageFactory._job_metrics_storage is None:
+            storage_type = os.getenv("STORAGE_TYPE", "filesystem")
+            if storage_type == "s3":
+                StorageFactory._job_metrics_storage = JobMetricsFileSystemStorage()
+            else:
+                StorageFactory._job_metrics_storage = JobMetricsS3Storage()
+        return StorageFactory._job_metrics_storage
