@@ -4,14 +4,16 @@ import JobMetricsViewer from './components/JobMetricsViewer';
 
 function App() {
   return (
+    <Router>
     <div className="App">
       <header className="App-header">
         <h1>Job Metrics Visualization</h1>
         <Routes>
-            <Route path="/metrics/:ownerId" component={JobMetricsViewer} />
+            <Route path="/metrics/:ownerId" element={<JobMetricsViewer />} />
         </Routes>
       </header>
     </div>
+    </Router>
   );
 }
 

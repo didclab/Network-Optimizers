@@ -9,8 +9,13 @@ from app.api.metrics_routes import job_metrics_router
 
 app = FastAPI()
 
-templates = Jinja2Templates(directory="../job-metrics-visualization/build")
-app.mount('/static', StaticFiles(directory="../job-metrics-visualization/build/static"), 'static')
+# local build
+# templates = Jinja2Templates(directory="../job-metrics-visualization/build")
+# app.mount('/static', StaticFiles(directory="../job-metrics-visualization/build/static"), 'static')
+
+# docker build
+templates = Jinja2Templates(directory="/app/build")
+app.mount('/static', StaticFiles(directory="/app/build/static"), 'static') 
 
 app.include_router(optimizer_api, tags=['Optimizers'], prefix="/api/optimizer")
 app.include_router(config_router, tags=['Configurations'], prefix="/api/configs")
