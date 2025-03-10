@@ -33,17 +33,29 @@ const JobMetricsViewer = () => {
     labels: metricsCache[selectedJobId]?.epoch_data.map((_, index) => index + 1) || [],
     datasets: [
       {
-        label: 'Reward',
+        label: 'Throughput',
         data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.reward) || [],
         borderColor: 'rgba(75,192,192,1)',
         fill: false,
       },
       {
-        label: 'Action',
-        data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action) || [],
+        label: 'Action - Parallelism',
+        data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[0]) || [],
         borderColor: 'rgba(153,102,255,1)',
         fill: false,
       },
+      {
+        label: 'Action - Concurrency',
+        data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[1]) || [],
+        borderColor: 'rgba(255,99,132,1)',
+        fill: false,
+      },
+      {
+        label: 'Loss',
+        data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.loss) || [],
+        borderColor: 'rgba(255,205,86,1)',
+        fill: false,
+      }
     ],
   };
 
@@ -71,16 +83,16 @@ const JobMetricsViewer = () => {
 //   const [selectedJobId, setSelectedJobId] = useState('');
 //   const [metrics] = useState({
 //     job1: [
-//       { reward: 10, action: 1 },
-//       { reward: 20, action: 2 },
+//       { reward: 10, action: [1, 2] },
+//       { reward: 20, action: [2, 3] },
 //     ],
 //     job2: [
-//       { reward: 15, action: 1 },
-//       { reward: 25, action: 3 },
+//       { reward: 15, action: [1, 4] },
+//       { reward: 25, action: [3, 6] },
 //     ],
 //     job3: [
-//       { reward: 30, action: 2 },
-//       { reward: 35, action: 3 },
+//       { reward: 30, action: [2, 9] },
+//       { reward: 35, action: [3, 10] },
 //     ],
 //   });
 
@@ -88,15 +100,21 @@ const JobMetricsViewer = () => {
 //     labels: metrics[selectedJobId]?.map((_, index) => index + 1) || [],
 //     datasets: [
 //       {
-//         label: 'Reward',
+//         label: 'Throughput',
 //         data: metrics[selectedJobId]?.map(metric => metric.reward) || [],
 //         borderColor: 'rgba(75,192,192,1)',
 //         fill: false,
 //       },
 //       {
-//         label: 'Action',
-//         data: metrics[selectedJobId]?.map(metric => metric.action) || [],
+//         label: 'Action - Parallelism',
+//         data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[0]) || [],
 //         borderColor: 'rgba(153,102,255,1)',
+//         fill: false,
+//       },
+//       {
+//         label: 'Action - Concurrency',
+//         data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[1]) || [],
+//         borderColor: 'rgba(255,99,132,1)',
 //         fill: false,
 //       },
 //     ],

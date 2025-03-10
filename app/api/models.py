@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Dict, Any
-
+from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -62,6 +62,7 @@ class JobMetrics(BaseModel):
     total_reward: Optional[float] = None
     action_count: Optional[int] = None
     other_metrics: Dict[str, Any] = {}
+    created_at: datetime
  
 class TransferJobRequest(BaseModel):
     ownerId: str

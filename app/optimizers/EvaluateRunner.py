@@ -4,6 +4,7 @@ from app.storage.OptimizerStore import OptimizerStore
 from app.storage.JobMetricsStore import JobMetricsStore
 from app.optimizers.ModelFactory import ModelFactory
 from app.api.models import EvaluateConfig, JobMetrics
+import torch
 
 
 class EvaluateRunner:
@@ -28,9 +29,23 @@ class EvaluateRunner:
             obs = self.env.reset()
             action, _ = self.model.predict(observation=obs)
             next_obs, reward, terminated, truncated, info = self.env.step(action)
+            loss = 0.0
+            if hasattr(self.model, 'policy') and hasattr(self.model.policy, 'compute_loss'):
+                try:
+                    if hasattr(self.model, 'replay_buffer') and self.model.replay_buffer.size() > 0:
+                        batch = self.model.replay_buffer.sample(1)
+                        loss_dict = self.model.policy.compute_loss(batch)
+                        loss = loss_dict.loss.item() if hasattr(loss_dict, 'loss') else loss_dict.item()
+                    else:
+                        obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
+                        action_tensor = torch.tensor(action).unsqueeze(0)
+                        _, log_prob, _ = self.model.policy.evaluate_actions(obs_tensor, action_tensor)
+                        loss = -log_prob.mean().item()
+                except Exception as e:
+                    print(f"Loss computation failed: {str(e)}")
             rewards.append(reward)
             actions.append(action)
-            epoch_data.append({"reward": reward, "action": action})
+            epoch_data.append({"reward": reward, "action": action, "loss": loss})
         
         metrics = JobMetrics(
             epoch_data=epoch_data,

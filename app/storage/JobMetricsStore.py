@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from app.api.models import JobMetrics
 import boto3
+from datetime import datetime
 
 class JobMetricsStore(ABC):
     @abstractmethod
@@ -23,6 +24,7 @@ class JobMetricsFileSystemStorage(JobMetricsStore):
     def save_job_metrics(self, owner_id: str, job_uuid: str, metrics: JobMetrics):
         path = f"job_metrics/{owner_id}/"
         os.makedirs(path, exist_ok=True)
+        metrics.created_at = datetime.now()
         file_path = os.path.join(path, f"{job_uuid}.json")
         with open(file_path, "w") as file:
             json.dump(metrics.dict(), file)
@@ -54,6 +56,7 @@ class JobMetricsS3Storage(JobMetricsStore):
 
     def save_job_metrics(self, owner_id: str, job_uuid: str, metrics: JobMetrics):
         path = f"job_metrics/{owner_id}/{job_uuid}.json"
+        metrics.created_at = datetime.now()
         metrics_json = json.dumps(metrics.dict())
         self.bucket.put_object(Key=path, Body=metrics_json)
 

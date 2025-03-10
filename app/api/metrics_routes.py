@@ -8,11 +8,16 @@ job_metrics_store = StorageFactory.get_metrics_storage()
 def get_all_job_metrics(owner_id: str):
     job_metrics = {}
     job_uuids = job_metrics_store.list_job_metrics(owner_id)
+    jobs_with_time = []
     for job_uuid_path in job_uuids:
         job_uuid = job_uuid_path.stem
         metrics = job_metrics_store.load_job_metrics(owner_id, job_uuid)
         if metrics:
-            job_metrics[job_uuid] = metrics.dict()
+            created_at = metrics.created_at
+            jobs_with_time.append((job_uuid, created_at, metrics.dict()))
+    jobs_with_time.sort(key=lambda x: x[1], reverse=True)
+    for job_uuid, _, metrics in jobs_with_time:
+        job_metrics[job_uuid] = metrics
     return job_metrics
 
 @job_metrics_router.get("/{owner_id}/{job_uuid}")
