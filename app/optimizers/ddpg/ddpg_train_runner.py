@@ -3,7 +3,7 @@ from typing import Optional
 from app.optimizers.TrainRunner import TrainRunner
 from app.api.models import TransferJobRequest
 from app.api.models import DDPGTrainingConfig
-from app.environemnts.ods_real_transfer_env import InfluxEnv
+from app.environments.ods_real_transfer_env import InfluxEnv
 from stable_baselines3.ddpg import DDPG
 from stable_baselines3.common.noise import NormalActionNoise
 from app.storage.OptimizerStore import OptimizerStore

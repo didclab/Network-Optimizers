@@ -1,5 +1,5 @@
 from app.api.models import TransferJobRequest
-from app.environemnts.ods_real_transfer_env import InfluxEnv
+from app.environments.ods_real_transfer_env import InfluxEnv
 from app.storage.OptimizerStore import OptimizerStore
 from app.storage.JobMetricsStore import JobMetricsStore
 from app.optimizers.ModelFactory import ModelFactory

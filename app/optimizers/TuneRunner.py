@@ -1,7 +1,7 @@
 from app.api.models import TransferJobRequest, TuneConfig
 from app.optimizers.ModelFactory import ModelFactory
 from app.storage.OptimizerStore import OptimizerStore
-from app.environemnts.ods_real_transfer_env import InfluxEnv
+from app.environments.ods_real_transfer_env import InfluxEnv
 
 
 class TuneRunner:
