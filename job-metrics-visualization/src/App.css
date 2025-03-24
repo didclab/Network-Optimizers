@@ -1,38 +1,110 @@
-.App {
-  text-align: center;
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.nav-header {
+  background-color: #323840;
+  padding: 10px 10px;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.nav-content {
+  display: flex;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0;
+  padding-left: 40px;
+  width: 100%;
+  justify-content: flex-start;
 }
 
-.App-header {
-  background-color: #282c34;
+.nav-header h1 {
+  color: #bcc5c9;
+  font-size: 1.0rem;
+  margin: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 10;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.main-content {
   min-height: 100vh;
+  background: linear-gradient(to bottom,
+      #172753 0%,
+      #172753 40%,
+      white 40%,
+      white 100%);
+  padding-top: 60px;
+}
+
+.metrics-wrapper-box {
+  background-color: white;
+  width: 90%;
+  max-width: 1200px;
+  margin: 20px auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.metrics-header {
+  padding: 20px 30px;
+  border-bottom: 1px solid #eee;
+  min-height: 100px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 10px;
+}
+
+.metrics-header h2 {
+  color: black;
+  font-size: 0.9rem;
+  margin: 0 0 10px 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.metrics-header-info {
+  font-size: 0.9em;
+  color: black;
+  margin-bottom: 10px;
+  font-family: 'Ubuntu', sans-serif;
+}
+
+.metrics-select {
+  background-color: white;
+  color: #333333;
+  font-family: 'Ubuntu', sans-serif;
+  font-size: 0.9rem;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 200px;
+  margin-top: 10px;
+}
+
+.metrics-inner-box {
+  padding: 30px;
+  height: 450px;
+  display: flex;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  align-items: center;
+  position: relative;
+  margin-top: 20px;
 }
 
-.App-link {
-  color: #61dafb;
+::-webkit-scrollbar {
+  width: 10px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+::-webkit-scrollbar-track {
+  border-radius: 1px;
+  background: #00000000;
 }
