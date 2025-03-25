@@ -78,6 +78,13 @@ body {
   font-family: 'Ubuntu', sans-serif;
 }
 
+.select-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .metrics-select {
   background-color: white;
   color: #333333;
@@ -88,6 +95,13 @@ body {
   border-radius: 4px;
   width: 200px;
   margin-top: 10px;
+}
+
+.metrics-select[multiple] {
+  height: 80px;
+  min-width: 200px;
+  padding: 5px;
+  margin-left: auto;
 }
 
 .metrics-inner-box {

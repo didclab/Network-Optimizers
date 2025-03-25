@@ -11,6 +11,7 @@ const JobMetricsViewer = () => {
   const [jobIds, setJobIds] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [metricsCache, setMetricsCache] = useState({});
+  const [selectedMetrics, setSelectedMetrics] = useState(['Throughput', 'Actions', 'Loss']);
 
   useEffect(() => {
     const fetchAllMetrics = async () => {
@@ -29,6 +30,11 @@ const JobMetricsViewer = () => {
     setSelectedJobId(event.target.value);
   };
 
+  const handleMetricChange = (event) => {
+    const value = Array.from(event.target.selectedOptions, option => option.value);
+    setSelectedMetrics(value);
+  };
+
   const getJobDisplayName = (jobId, index) => {
     if (index === 0) {
       return `Job #${index + 1} (Latest)`;
@@ -45,37 +51,45 @@ const JobMetricsViewer = () => {
     return 'th';
   };
 
+  const metricOptions = [
+    { value: 'Throughput', label: 'Throughput', color: 'rgba(75,192,192,1)', yAxisID: 'y-throughput' },
+    { value: 'Actions', label: 'Actions (Parallelism/Concurrency)', color: ['rgba(153,102,255,1)', 'rgba(255,99,132,1)'], yAxisID: 'y-actions' },
+    { value: 'Loss', label: 'Loss', color: 'rgba(255,205,86,1)', yAxisID: 'y-loss' }
+  ];
+
   const chartData = {
     labels: metricsCache[selectedJobId]?.epoch_data.map((_, index) => index + 1) || [],
     datasets: [
-      {
+      ...(selectedMetrics.includes('Throughput') ? [{
         label: 'Throughput',
         data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.reward) || [],
         borderColor: 'rgba(75,192,192,1)',
         fill: false,
         yAxisID: 'y-throughput',
-      },
-      {
-        label: 'Action - Parallelism',
-        data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[0]) || [],
-        borderColor: 'rgba(153,102,255,1)',
-        fill: false,
-        yAxisID: 'y-actions',
-      },
-      {
-        label: 'Action - Concurrency',
-        data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[1]) || [],
-        borderColor: 'rgba(255,99,132,1)',
-        fill: false,
-        yAxisID: 'y-actions',
-      },
-      {
+      }] : []),
+      ...(selectedMetrics.includes('Actions') ? [
+        {
+          label: 'Action - Parallelism',
+          data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[0]) || [],
+          borderColor: 'rgba(153,102,255,1)',
+          fill: false,
+          yAxisID: 'y-actions',
+        },
+        {
+          label: 'Action - Concurrency',
+          data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.action[1]) || [],
+          borderColor: 'rgba(255,99,132,1)',
+          fill: false,
+          yAxisID: 'y-actions',
+        }
+      ] : []),
+      ...(selectedMetrics.includes('Loss') ? [{
         label: 'Loss',
         data: metricsCache[selectedJobId]?.epoch_data.map(metric => metric.loss) || [],
         borderColor: 'rgba(255,205,86,1)',
         fill: false,
         yAxisID: 'y-loss',
-      }
+      }] : []),
     ],
   };
 
@@ -86,57 +100,57 @@ const JobMetricsViewer = () => {
       intersect: false,
     },
     scales: {
-      'y-throughput': {
-        type: 'linear',
-        display: true,
-        position: 'left',
-        title: {
+      ...(selectedMetrics.includes('Throughput') && {
+        'y-throughput': {
+          type: 'linear',
           display: true,
-          text: 'Throughput'
-        },
-        min: 0,
-        ticks: {
-          callback: (value) => {
-            if (value < 10) return value.toFixed(2);
-            if (value < 100) return value.toFixed(1);
-            return value.toFixed(0);
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Throughput'
+          },
+          min: 0,
+          ticks: {
+            callback: (value) => {
+              if (value < 10) return value.toFixed(2);
+              if (value < 100) return value.toFixed(1);
+              return value.toFixed(0);
+            }
           }
         }
-      },
-      'y-actions': {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        title: {
+      }),
+      ...(selectedMetrics.includes('Actions') && {
+        'y-actions': {
+          type: 'linear',
           display: true,
-          text: 'Actions (Parallelism/Concurrency)'
-        },
-        min: 0,
-        max: 50,
-        grid: {
-          drawOnChartArea: false,
-        },
-        ticks: {
-          callback: (value) => value.toFixed(0)
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Actions (Parallelism/Concurrency)'
+          },
+          min: 0,
+          max: 50,
+          ticks: {
+            callback: (value) => value.toFixed(0)
+          }
         }
-      },
-      'y-loss': {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        title: {
+      }),
+      ...(selectedMetrics.includes('Loss') && {
+        'y-loss': {
+          type: 'linear',
           display: true,
-          text: 'Loss'
-        },
-        min: 0,
-        max: 2,
-        grid: {
-          drawOnChartArea: false,
-        },
-        ticks: {
-          callback: (value) => value.toFixed(3)
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Loss'
+          },
+          min: 0,
+          max: 2,
+          ticks: {
+            callback: (value) => value.toFixed(3)
+          }
         }
-      },
+      })
     },
     plugins: {
       tooltip: {
@@ -166,18 +180,32 @@ const JobMetricsViewer = () => {
     <div className="metrics-wrapper-box">
       <div className="metrics-header">
         <h2>Job Metrics</h2>
-        <select 
-          className="metrics-select"
-          onChange={handleJobChange} 
-          value={selectedJobId}
-        >
-        <option value="" disabled>Select a job</option>
-          {jobIds.map((jobId, index) => (
-            <option key={jobId} value={jobId}>
-              {getJobDisplayName(jobId, index)}
-            </option>
-          ))}
-        </select>
+        <div className="select-container">
+          <select 
+            className="metrics-select"
+            onChange={handleJobChange} 
+            value={selectedJobId}
+          >
+            <option value="" disabled>Select a job</option>
+            {jobIds.map((jobId, index) => (
+              <option key={jobId} value={jobId}>
+                {getJobDisplayName(jobId, index)}
+              </option>
+            ))}
+          </select>
+          <select
+            className="metrics-select"
+            multiple
+            value={selectedMetrics}
+            onChange={handleMetricChange}
+          >
+            {metricOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="metrics-inner-box">
         {selectedJobId && <Line data={chartData} options={options} />}
@@ -190,6 +218,7 @@ const JobMetricsViewer = () => {
 
 //   const [jobIds, setJobIds] = useState(['job1', 'job2', 'job3']);
 //   const [selectedJobId, setSelectedJobId] = useState('');
+//   const [selectedMetrics, setSelectedMetrics] = useState(['Throughput', 'Actions', 'Loss']);
 //   const [metrics] = useState({
 //     job1: [
 //       { reward: 10, action: [1, 2], loss: 0.1 },
@@ -212,37 +241,45 @@ const JobMetricsViewer = () => {
 //     return `Job #${index + 1}`;
 //   };
 
+//   const metricOptions = [
+//     { value: 'Throughput', label: 'Throughput', color: 'rgba(75,192,192,1)', yAxisID: 'y-throughput' },
+//     { value: 'Actions', label: 'Actions (Parallelism/Concurrency)', color: ['rgba(153,102,255,1)', 'rgba(255,99,132,1)'], yAxisID: 'y-actions' },
+//     { value: 'Loss', label: 'Loss', color: 'rgba(255,205,86,1)', yAxisID: 'y-loss' }
+//   ];
+
 //   const chartData = {
 //     labels: metrics[selectedJobId]?.map((_, index) => index + 1) || [],
 //     datasets: [
-//       {
+//       ...(selectedMetrics.includes('Throughput') ? [{
 //         label: 'Throughput',
 //         data: metrics[selectedJobId]?.map(metric => metric.reward) || [],
 //         borderColor: 'rgba(75,192,192,1)',
 //         fill: false,
 //         yAxisID: 'y-throughput',
-//       },
-//       {
-//         label: 'Action - Parallelism',
-//         data: metrics[selectedJobId]?.map(metric => metric.action[0]) || [],
-//         borderColor: 'rgba(153,102,255,1)',
-//         fill: false,
-//         yAxisID: 'y-actions',
-//       },
-//       {
-//         label: 'Action - Concurrency',
-//         data: metrics[selectedJobId]?.map(metric => metric.action[1]) || [],
-//         borderColor: 'rgba(255,99,132,1)',
-//         fill: false,
-//         yAxisID: 'y-actions',
-//       },
-//       {
+//       }] : []),
+//       ...(selectedMetrics.includes('Actions') ? [
+//         {
+//           label: 'Action - Parallelism',
+//           data: metrics[selectedJobId]?.map(metric => metric.action[0]) || [],
+//           borderColor: 'rgba(153,102,255,1)',
+//           fill: false,
+//           yAxisID: 'y-actions',
+//         },
+//         {
+//           label: 'Action - Concurrency',
+//           data: metrics[selectedJobId]?.map(metric => metric.action[1]) || [],
+//           borderColor: 'rgba(255,99,132,1)',
+//           fill: false,
+//           yAxisID: 'y-actions',
+//         }
+//       ] : []),
+//       ...(selectedMetrics.includes('Loss') ? [{
 //         label: 'Loss',
 //         data: metrics[selectedJobId]?.map(metric => metric.loss) || [],
 //         borderColor: 'rgba(255,205,86,1)',
 //         fill: false,
 //         yAxisID: 'y-loss',
-//       }
+//       }] : []),
 //     ],
 //   };
 
@@ -253,57 +290,57 @@ const JobMetricsViewer = () => {
 //       intersect: false,
 //     },
 //     scales: {
-//       'y-throughput': {
-//         type: 'linear',
-//         display: true,
-//         position: 'left',
-//         title: {
+//       ...(selectedMetrics.includes('Throughput') && {
+//         'y-throughput': {
+//           type: 'linear',
 //           display: true,
-//           text: 'Throughput'
-//         },
-//         min: 0,
-//         ticks: {
-//           callback: (value) => {
-//             if (value < 10) return value.toFixed(2);
-//             if (value < 100) return value.toFixed(1);
-//             return value.toFixed(0);
+//           position: 'left',
+//           title: {
+//             display: true,
+//             text: 'Throughput'
+//           },
+//           min: 0,
+//           ticks: {
+//             callback: (value) => {
+//               if (value < 10) return value.toFixed(2);
+//               if (value < 100) return value.toFixed(1);
+//               return value.toFixed(0);
+//             }
 //           }
 //         }
-//       },
-//       'y-actions': {
-//         type: 'linear',
-//         display: true,
-//         position: 'right',
-//         title: {
+//       }),
+//       ...(selectedMetrics.includes('Actions') && {
+//         'y-actions': {
+//           type: 'linear',
 //           display: true,
-//           text: 'Actions (Parallelism/Concurrency)'
-//         },
-//         min: 0,
-//         max: 50,
-//         grid: {
-//           drawOnChartArea: false,
-//         },
-//         ticks: {
-//           callback: (value) => value.toFixed(0)
+//           position: 'left',
+//           title: {
+//             display: true,
+//             text: 'Actions (Parallelism/Concurrency)'
+//           },
+//           min: 0,
+//           max: 50,
+//           ticks: {
+//             callback: (value) => value.toFixed(0)
+//           }
 //         }
-//       },
-//       'y-loss': {
-//         type: 'linear',
-//         display: true,
-//         position: 'right',
-//         title: {
+//       }),
+//       ...(selectedMetrics.includes('Loss') && {
+//         'y-loss': {
+//           type: 'linear',
 //           display: true,
-//           text: 'Loss'
-//         },
-//         min: 0,
-//         max: 2,
-//         grid: {
-//           drawOnChartArea: false,
-//         },
-//         ticks: {
-//           callback: (value) => value.toFixed(3)
+//           position: 'left',
+//           title: {
+//             display: true,
+//             text: 'Loss'
+//           },
+//           min: 0,
+//           max: 2,
+//           ticks: {
+//             callback: (value) => value.toFixed(3)
+//           }
 //         }
-//       },
+//       })
 //     },
 //     plugins: {
 //       tooltip: {
@@ -342,22 +379,41 @@ const JobMetricsViewer = () => {
 //     setSelectedJobId(event.target.value);
 //   };
 
+//   const handleMetricChange = (event) => {
+//     const value = Array.from(event.target.selectedOptions, option => option.value);
+//     setSelectedMetrics(value);
+//   };
+
 //   return (
 //     <div className="metrics-wrapper-box">
 //       <div className="metrics-header">
 //         <h2>Job Metrics</h2>
-//         <select 
-//           className="metrics-select"
-//           onChange={handleJobChange} 
-//           value={selectedJobId}
-//         >
-//         <option value="" disabled>Select a job</option>
-//           {jobIds.map((jobId, index) => (
-//             <option key={jobId} value={jobId}>
-//               {getJobDisplayName(jobId, index)}
-//             </option>
-//           ))}
-//         </select>
+//         <div className="select-container">
+//           <select 
+//             className="metrics-select"
+//             onChange={handleJobChange} 
+//             value={selectedJobId}
+//           >
+//             <option value="" disabled>Select a job</option>
+//             {jobIds.map((jobId, index) => (
+//               <option key={jobId} value={jobId}>
+//                 {getJobDisplayName(jobId, index)}
+//               </option>
+//             ))}
+//           </select>
+//           <select
+//             className="metrics-select"
+//             multiple
+//             value={selectedMetrics}
+//             onChange={handleMetricChange}
+//           >
+//             {metricOptions.map(option => (
+//               <option key={option.value} value={option.value}>
+//                 {option.label}
+//               </option>
+//             ))}
+//           </select>
+//         </div>
 //       </div>
 //       <div className="metrics-inner-box">
 //         {selectedJobId && <Line data={chartData} options={options} />}
