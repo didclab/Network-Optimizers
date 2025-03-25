@@ -3,22 +3,29 @@ import { Line } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import zoomPlugin from 'chartjs-plugin-zoom';
 
-Chart.register(...registerables);
+Chart.register(...registerables, zoomPlugin);
 
 const JobMetricsViewer = () => {
   const { ownerId } = useParams();
   const [jobIds, setJobIds] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [metricsCache, setMetricsCache] = useState({});
-  const [selectedMetrics, setSelectedMetrics] = useState(['Throughput', 'Actions', 'Loss']);
+  const [selectedMetrics, setSelectedMetrics] = useState(['Throughput']);
+
+  const chartRef = React.useRef(null);
 
   useEffect(() => {
     const fetchAllMetrics = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/${ownerId}`);
-        setJobIds(Object.keys(response.data));
+        const jobs = Object.keys(response.data);
+        setJobIds(jobs);
         setMetricsCache(response.data);
+        if (jobs.length > 0) {
+          setSelectedJobId(jobs[0]);
+        }
       } catch (error) {
         console.error('Error fetching job metrics:', error);
       }
@@ -100,6 +107,24 @@ const JobMetricsViewer = () => {
       intersect: false,
     },
     scales: {
+        x: {
+          grid: {
+            drawOnChartArea: false,
+          },
+          min: undefined,
+          max: undefined,
+          padding: {
+            left: 10,
+            right: 10
+          },
+          bounds: 'data',
+          afterBuildTicks: (scale) => {
+            const originalMin = scale.min;
+            const originalMax = scale.max;
+            scale.min = originalMin;
+            scale.max = originalMax;
+          }
+        },
       ...(selectedMetrics.includes('Throughput') && {
         'y-throughput': {
           type: 'linear',
@@ -153,6 +178,19 @@ const JobMetricsViewer = () => {
       })
     },
     plugins: {
+      zoom: {
+        zoom: {
+          wheel: {
+            enabled: true,
+            mode: 'y'
+          },
+          pinch: {
+            enabled: true,
+            mode: 'y'
+          },
+          mode: 'y'
+        }
+      },
       tooltip: {
         callbacks: {
           title: function(context) {
@@ -173,6 +211,31 @@ const JobMetricsViewer = () => {
           }
         }
       }
+    }
+  };
+
+  const zoomIn = () => {
+    const chart = chartRef.current;
+    if (chart) {
+      chart.zoom({
+        y: 1.1
+      });
+    }
+  };
+  
+  const zoomOut = () => {
+    const chart = chartRef.current;
+    if (chart) {
+      chart.zoom({
+        y: 0.9
+      });
+    }
+  };
+
+  const resetZoom = () => {
+    const chart = chartRef.current;
+    if (chart) {
+      chart.resetZoom();
     }
   };
 
@@ -208,7 +271,22 @@ const JobMetricsViewer = () => {
         </div>
       </div>
       <div className="metrics-inner-box">
-        {selectedJobId && <Line data={chartData} options={options} />}
+        {jobIds.length === 0 ? (
+          <div className="no-jobs-message">
+            <p>There are currently no jobs available.</p>
+          </div>
+        ) : (
+          selectedJobId && (
+            <>
+              <Line ref={chartRef} data={chartData} options={options} />
+              <div className="zoom-controls">
+                <button onClick={zoomIn}>🔍+</button>
+                <button onClick={zoomOut}>🔍-</button>
+                <button onClick={resetZoom}>↺</button>
+              </div>
+            </>
+          )
+        )}
       </div>
     </div>
   );
@@ -217,22 +295,26 @@ const JobMetricsViewer = () => {
 /* Testing with dummy data */
 
 //   const [jobIds, setJobIds] = useState(['job1', 'job2', 'job3']);
-//   const [selectedJobId, setSelectedJobId] = useState('');
-//   const [selectedMetrics, setSelectedMetrics] = useState(['Throughput', 'Actions', 'Loss']);
+//   const [selectedJobId, setSelectedJobId] = useState('job1');
+//   const [selectedMetrics, setSelectedMetrics] = useState(['Throughput']);
 //   const [metrics] = useState({
 //     job1: [
 //       { reward: 10, action: [1, 2], loss: 0.1 },
-//       { reward: 20, action: [2, 3], loss: 0.2 },
+//       { reward: 20, action: [8, 9], loss: 0.2 },
+//       { reward: 45, action: [10, 30], loss: 0.05 },
 //     ],
 //     job2: [
 //       { reward: 15, action: [1, 4], loss: 0.2 },
 //       { reward: 25, action: [3, 6], loss: 0.15 },
+//       { reward: 75, action: [12, 32], loss: 0.01 },
 //     ],
 //     job3: [
 //       { reward: 30, action: [2, 9], loss: 0.6 },
 //       { reward: 35, action: [3, 10], loss: 0.8 },
+//       { reward: 105, action: [15, 29], loss: 0.08 },
 //     ],
 //   });
+//   const chartRef = React.useRef(null);
 
 //   const getJobDisplayName = (jobId, index) => {
 //     if (index === 0) {
@@ -290,6 +372,24 @@ const JobMetricsViewer = () => {
 //       intersect: false,
 //     },
 //     scales: {
+//       x: {
+//         grid: {
+//           drawOnChartArea: false,
+//         },
+//         min: undefined,
+//         max: undefined,
+//         padding: {
+//           left: 10,
+//           right: 10
+//         },
+//         bounds: 'data',
+//         afterBuildTicks: (scale) => {
+//           const originalMin = scale.min;
+//           const originalMax = scale.max;
+//           scale.min = originalMin;
+//           scale.max = originalMax;
+//         }
+//       },
 //       ...(selectedMetrics.includes('Throughput') && {
 //         'y-throughput': {
 //           type: 'linear',
@@ -343,6 +443,19 @@ const JobMetricsViewer = () => {
 //       })
 //     },
 //     plugins: {
+//       zoom: {
+//         zoom: {
+//           wheel: {
+//             enabled: true,
+//             mode: 'y'
+//           },
+//           pinch: {
+//             enabled: true,
+//             mode: 'y'
+//           },
+//           mode: 'y'
+//         }
+//       },
 //       tooltip: {
 //         callbacks: {
 //           title: function(context) {
@@ -363,6 +476,31 @@ const JobMetricsViewer = () => {
 //           }
 //         }
 //       }
+//     }
+//   };
+
+//   const zoomIn = () => {
+//     const chart = chartRef.current;
+//     if (chart) {
+//       chart.zoom({
+//         y: 1.1
+//       });
+//     }
+//   };
+  
+//   const zoomOut = () => {
+//     const chart = chartRef.current;
+//     if (chart) {
+//       chart.zoom({
+//         y: 0.9
+//       });
+//     }
+//   };
+
+//   const resetZoom = () => {
+//     const chart = chartRef.current;
+//     if (chart) {
+//       chart.resetZoom();
 //     }
 //   };
 
@@ -406,6 +544,7 @@ const JobMetricsViewer = () => {
 //             multiple
 //             value={selectedMetrics}
 //             onChange={handleMetricChange}
+//             disabled={jobIds.length === 0}
 //           >
 //             {metricOptions.map(option => (
 //               <option key={option.value} value={option.value}>
@@ -416,7 +555,22 @@ const JobMetricsViewer = () => {
 //         </div>
 //       </div>
 //       <div className="metrics-inner-box">
-//         {selectedJobId && <Line data={chartData} options={options} />}
+//         {jobIds.length === 0 ? (
+//           <div className="no-jobs-message">
+//             <p>There are currently no jobs available.</p>
+//           </div>
+//         ) : (
+//           selectedJobId && (
+//             <>
+//               <Line ref={chartRef} data={chartData} options={options} />
+//               <div className="zoom-controls">
+//                 <button onClick={zoomIn}>🔍+</button>
+//                 <button onClick={zoomOut}>🔍-</button>
+//                 <button onClick={resetZoom}>↺</button>
+//               </div>
+//             </>
+//           )
+//         )}
 //       </div>
 //     </div>
 //   );

@@ -105,13 +105,49 @@ body {
 }
 
 .metrics-inner-box {
-  padding: 30px;
+  padding: 40px 30px 30px 30px;
   height: 450px;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   margin-top: 20px;
+}
+
+.zoom-controls {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.zoom-controls button {
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin: 0 10px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.zoom-controls button:hover {
+  background-color: #f0f0f0;
+}
+
+.no-jobs-message {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 1.2rem;
+  max-width: 80%;
+}
+
+.no-jobs-message p {
+  margin: 10px 0;
 }
 
 ::-webkit-scrollbar {
