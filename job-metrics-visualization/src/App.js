@@ -1,18 +1,16 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import JobMetricsViewer from './components/JobMetricsViewer';
 import './App.css';
-
+import { getCookie } from './utils/CookieUtils';
+import NavbarComponent from './components/NavbarComponent';
 function ProtectedRoute({ children }) {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const ownerId = queryParams.get('ownerId');
-  const email = queryParams.get('email');
-  const storedToken = localStorage.getItem('ATOKEN');
+  const ownerId = getCookie('email');
+  const storedToken = getCookie("ATOKEN");
+  console.log(ownerId + " " + storedToken);
   let emailFromToken = null;
 
-  if (!ownerId || !email || !storedToken) {
+  if (!ownerId || !storedToken) {
     console.error('Access Denied: Missing ownerId, email, or token');
     return (
       <div className="error-message">
@@ -44,7 +42,7 @@ function ProtectedRoute({ children }) {
       </div>
     );
   }
-  if (emailFromToken === email) {
+  if (emailFromToken === ownerId) {
     return children;
   } else {
     return (
@@ -60,11 +58,7 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <nav className="nav-header">
-          <div className="nav-content">
-            <h1>Job Metrics Visualization for One Data Share</h1>
-          </div>
-        </nav>
+        <NavbarComponent />
         <div className="main-content">
           <Routes>
             <Route path="/metrics"

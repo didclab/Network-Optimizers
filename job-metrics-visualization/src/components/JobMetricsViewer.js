@@ -2,15 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
 import axios from 'axios';
-import { useLocation } from 'react-router-dom';
 import zoomPlugin from 'chartjs-plugin-zoom';
-
+import { getCookie } from '../utils/CookieUtils';
 Chart.register(...registerables, zoomPlugin);
 
 const JobMetricsViewer = () => {
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const ownerId = queryParams.get('ownerId');
+  const ownerId = getCookie('email');
   const [jobIds, setJobIds] = useState([]);
   const [selectedJobId, setSelectedJobId] = useState('');
   const [metricsCache, setMetricsCache] = useState({});
