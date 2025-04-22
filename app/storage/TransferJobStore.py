@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 import boto3
 from app.api.models import TransferJobRequest
-from app.storage.TransferJobStore import TransferJobStore
 
 class TransferJobStore(ABC):
     @abstractmethod
