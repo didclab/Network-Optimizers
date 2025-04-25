@@ -36,7 +36,7 @@ async def optimize_transfer(transfer_job_uuids: List[str], background_tasks: Bac
             eval_runner.load_model()
             background_tasks.add_task(eval_runner.evaluate())
 
-        elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.TRAIN:
+        elif optimizerOptions.optimizerRequestType == OptimizerFunctionType.TUNE:
             tune_runner = TuneRunner(transfer_request=transferRequest, model_store=storage,
                                     tune_config=TuneConfig(**config.dict()))
             tune_runner.load_model()

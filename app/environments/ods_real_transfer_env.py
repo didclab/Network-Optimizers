@@ -31,7 +31,7 @@ class InfluxEnv(gym.Env):
 
         self.observation_space = spaces.Box(low=1, high=np.inf, shape=(len(self.data_columns),), dtype=np.float32)
         if action_space_discrete:
-            self.action_space = spaces.Discrete(3) # What are the three actions? Increase, decrease and remain constant?
+            self.action_space = spaces.Discrete(3)
         else:
             self.action_space = spaces.Box(low=1, high=self.transfer_request.options.maxConcurrency, shape=(2,))
             logging.info(f"Action space Shape {self.action_space.shape}")
