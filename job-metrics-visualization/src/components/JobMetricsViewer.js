@@ -12,6 +12,7 @@ const JobMetricsViewer = () => {
   const [selectedJobId, setSelectedJobId] = useState('');
   const [metricsCache, setMetricsCache] = useState({});
   const [selectedMetrics, setSelectedMetrics] = useState(['Throughput']);
+  const [availableMetrics, setAvailableMetrics] = useState(['Throughput', 'Actions']);
 
   const chartRef = React.useRef(null);
 
@@ -24,6 +25,10 @@ const JobMetricsViewer = () => {
         setMetricsCache(response.data);
         if (jobs.length > 0) {
           setSelectedJobId(jobs[0]);
+          const hasLossValues = jobs.some(jobId => 
+            response.data[jobId]?.epoch_data?.some(metric => metric.loss !== null)
+          );
+          setAvailableMetrics(hasLossValues ? ['Throughput', 'Actions', 'Loss'] : ['Throughput', 'Actions']);
         }
       } catch (error) {
         console.error('Error fetching job metrics:', error);
@@ -33,7 +38,13 @@ const JobMetricsViewer = () => {
   }, [ownerId]);
 
   const handleJobChange = (event) => {
-    setSelectedJobId(event.target.value);
+    const newJobId = event.target.value;
+    setSelectedJobId(newJobId);
+    const hasLossValues = metricsCache[newJobId]?.epoch_data?.some(metric => metric.loss !== null);
+    setAvailableMetrics(hasLossValues ? ['Throughput', 'Actions', 'Loss'] : ['Throughput', 'Actions']);
+    if (!hasLossValues && selectedMetrics.includes('Loss')) {
+      setSelectedMetrics(selectedMetrics.filter(m => m !== 'Loss'));
+    }
   };
 
   const handleMetricChange = (event) => {
@@ -72,6 +83,7 @@ const JobMetricsViewer = () => {
         borderColor: 'rgba(75,192,192,1)',
         fill: false,
         yAxisID: 'y-throughput',
+        spanGaps: true,
       }] : []),
       ...(selectedMetrics.includes('Actions') ? [
         {
@@ -80,6 +92,7 @@ const JobMetricsViewer = () => {
           borderColor: 'rgba(153,102,255,1)',
           fill: false,
           yAxisID: 'y-actions',
+          spanGaps: true,
         },
         {
           label: 'Action - Concurrency',
@@ -87,6 +100,7 @@ const JobMetricsViewer = () => {
           borderColor: 'rgba(255,99,132,1)',
           fill: false,
           yAxisID: 'y-actions',
+          spanGaps: true,
         }
       ] : []),
       ...(selectedMetrics.includes('Loss') ? [{
@@ -95,6 +109,7 @@ const JobMetricsViewer = () => {
         borderColor: 'rgba(255,205,86,1)',
         fill: false,
         yAxisID: 'y-loss',
+        spanGaps: true,
       }] : []),
     ],
   };
@@ -200,6 +215,9 @@ const JobMetricsViewer = () => {
             let label = context.dataset.label || '';
             let value = context.parsed.y;
             
+            if (value === null) {
+              return `${label}: N/A`;
+            }
             if (label === 'Loss') {
               return `${label}: ${value.toFixed(3)}`;
             } else if (label.startsWith('Throughput')) {
@@ -261,11 +279,13 @@ const JobMetricsViewer = () => {
             value={selectedMetrics}
             onChange={handleMetricChange}
           >
-            {metricOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+            {metricOptions
+              .filter(option => availableMetrics.includes(option.value))
+              .map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
           </select>
         </div>
       </div>

@@ -3,7 +3,7 @@ from app.environments.ods_real_transfer_env import InfluxEnv
 from app.storage.OptimizerStore import OptimizerStore
 from app.storage.JobMetricsStore import JobMetricsStore
 from app.optimizers.ModelFactory import ModelFactory
-from app.api.models import EvaluateConfig, JobMetrics
+from app.api.models import EvaluateConfig, JobMetrics, ModelType
 import torch
 
 
@@ -29,20 +29,22 @@ class EvaluateRunner:
             obs = self.env.reset()
             action, _ = self.model.predict(observation=obs)
             next_obs, reward, terminated, truncated, info = self.env.step(action)
-            loss = 0.0
-            if hasattr(self.model, 'policy') and hasattr(self.model.policy, 'compute_loss'):
+            loss = None
+            if self.eval_config.modelType == ModelType.ddpg and hasattr(self.model, 'policy'):
                 try:
                     if hasattr(self.model, 'replay_buffer') and self.model.replay_buffer.size() > 0:
-                        batch = self.model.replay_buffer.sample(1)
+                        batch_size = min(64, self.model.replay_buffer.size())
+                        batch = self.model.replay_buffer.sample(batch_size)
                         loss_dict = self.model.policy.compute_loss(batch)
-                        loss = loss_dict.loss.item() if hasattr(loss_dict, 'loss') else loss_dict.item()
-                    else:
-                        obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
-                        action_tensor = torch.tensor(action).unsqueeze(0)
-                        _, log_prob, _ = self.model.policy.evaluate_actions(obs_tensor, action_tensor)
-                        loss = -log_prob.mean().item()
+                        if hasattr(loss_dict, 'actor_loss') and hasattr(loss_dict, 'critic_loss'):
+                            loss = (loss_dict.actor_loss.item() + loss_dict.critic_loss.item()) / 2
+                        elif hasattr(loss_dict, 'loss'):
+                            loss = loss_dict.loss.item()
+                        else:
+                            loss = loss_dict.item()
                 except Exception as e:
                     print(f"Loss computation failed: {str(e)}")
+                    loss = None
             rewards.append(reward)
             actions.append(action)
             epoch_data.append({"reward": reward, "action": action, "loss": loss})
